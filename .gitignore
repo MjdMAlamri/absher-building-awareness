@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual env
+absher-env/
+venv/
+.env
+
+# macOS
+.DS_Store
+
+# Models / media (big files – optional)
+*.pt
+PeopleWalking.MP4
