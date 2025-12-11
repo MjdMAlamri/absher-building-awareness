@@ -15,13 +15,31 @@ from pydantic import BaseModel
 from ultralytics import YOLO
 import supervision as sv
 
+import torch
+
+# ---- PyTorch 2.6 compatibility: force weights_only=False in torch.load ----
+_real_torch_load = torch.load
+
+
+def torch_load_allow_code(*args, **kwargs):
+    """
+    Patch for PyTorch 2.6: YOLO weights are regular checkpoints, not 'weights_only'.
+    We always call torch.load(..., weights_only=False) so Ultralytics can load models
+    like before. Only do this if you trust the checkpoint source.
+    """
+    kwargs.setdefault("weights_only", False)
+    return _real_torch_load(*args, **kwargs)
+
+
+torch.load = torch_load_allow_code
+# ---------------------------------------------------------------------------
 
 # ---------- VIDEO SOURCE CONFIG ----------
 
-VIDEO_FILE_NAME = "PeopleWalking.MP4"  # make sure this matches your file name
+VIDEO_FILE_NAME = "PeopleWalking2.MP4"  # تأكدي أن الاسم مطابق لملف الفيديو
 VIDEO_SOURCE_PATH = Path(__file__).with_name(VIDEO_FILE_NAME)
-VIDEO_SOURCE: Any = str(VIDEO_SOURCE_PATH)   # use file
-# VIDEO_SOURCE: Any = 0  # uncomment to test with webcam
+VIDEO_SOURCE: Any = str(VIDEO_SOURCE_PATH)   # ملف فيديو
+# VIDEO_SOURCE: Any = 0  # لو حابة تجربي الكاميرا
 
 print(f"[CONFIG] VIDEO_SOURCE set to: {VIDEO_SOURCE}")
 
@@ -36,7 +54,7 @@ class BuildingStatus(BaseModel):
 
 
 class Alert(BaseModel):
-    type: str       # "crowding" | "movement"
+    type: str       # وصف نوع التنبيه بالعربي
     level: str      # "info" | "warning" | "critical"
     message: str
     ts: float
@@ -74,10 +92,13 @@ state: Dict[str, Any] = {
     "pipeline_running": False,
     "sections": {},
     "section_history": [],
+    "track_last_zone": {},
+    "last_total": 0,
+    "last_alert_ts_by_type": {},
 }
 
 CROWD_THRESHOLD = 40
-SPIKE_THRESHOLD = 15
+SPIKE_THRESHOLD = 5          # تغيّر كبير في عدد المتواجدين
 SECTION_WAIT_WINDOW_SEC = 5 * 60  # ~5 minutes window
 
 
@@ -93,7 +114,6 @@ def init_sections(frame_width: int, frame_height: int):
 
     zones: Dict[str, sv.PolygonZone] = {}
 
-    # helper: build a 4-point polygon from an (x1, y1, x2, y2) rectangle
     def rect_to_polygon(x1, y1, x2, y2):
         return np.array([
             [x1, y1],
@@ -108,15 +128,12 @@ def init_sections(frame_width: int, frame_height: int):
 
     zones["Desk 1"] = sv.PolygonZone(
         polygon=rect_to_polygon(0, 0, desk_width, desk_height),
-        frame_resolution_wh=(w, h),
     )
     zones["Desk 2"] = sv.PolygonZone(
         polygon=rect_to_polygon(desk_width, 0, 2 * desk_width, desk_height),
-        frame_resolution_wh=(w, h),
     )
     zones["Desk 3"] = sv.PolygonZone(
         polygon=rect_to_polygon(2 * desk_width, 0, w, desk_height),
-        frame_resolution_wh=(w, h),
     )
 
     # ---- Waiting area (middle band) ----
@@ -124,7 +141,6 @@ def init_sections(frame_width: int, frame_height: int):
     waiting_bottom = int(h * 0.65)
     zones["Waiting Area"] = sv.PolygonZone(
         polygon=rect_to_polygon(0, waiting_top, w, waiting_bottom),
-        frame_resolution_wh=(w, h),
     )
 
     # ---- Entrance/Exit (bottom band, left/right) ----
@@ -132,11 +148,9 @@ def init_sections(frame_width: int, frame_height: int):
     door_bottom = h
     zones["Entrance"] = sv.PolygonZone(
         polygon=rect_to_polygon(int(w * 0.5), door_top, w, door_bottom),
-        frame_resolution_wh=(w, h),
     )
     zones["Exit"] = sv.PolygonZone(
         polygon=rect_to_polygon(0, door_top, int(w * 0.5), door_bottom),
-        frame_resolution_wh=(w, h),
     )
 
     # Initialize section stats in state
@@ -149,18 +163,25 @@ def init_sections(frame_width: int, frame_height: int):
         }
 
     state["sections"] = sections_state
+    state["track_last_zone"] = {}  # reset when video/size changes
+
     return zones
 
 
-def update_section_stats(zones: Dict[str, sv.PolygonZone],
-                         detections: sv.Detections,
-                         now: float):
+def update_section_stats(
+    zones: Dict[str, sv.PolygonZone],
+    detections: sv.Detections,
+    now: float,
+):
     """
-    For each tracked person, see which zone they are in.
-    Update per-zone count, peak, and simple waiting-time approximation.
-    Uses OpenCV's pointPolygonTest instead of a non-existent PolygonZone.encloses().
+    - يحسب عدد الأشخاص في كل منطقة.
+    - يحدّث أعلى إشغال.
+    - يعتمد على تغيّر منطقة الشخص (track_id) عشان يحسب الدخول/الخروج:
+        * انتقال جديد إلى "Entrance" → دخول
+        * انتقال جديد إلى "Exit"     → خروج
     """
     sections_state = state["sections"]
+    track_last_zone: Dict[int, Optional[str]] = state.setdefault("track_last_zone", {})
 
     # Reset counts per frame
     for s in sections_state.values():
@@ -178,22 +199,31 @@ def update_section_stats(zones: Dict[str, sv.PolygonZone],
 
         point = (cx, cy)
 
-        for section_name, zone in zones.items():
-            # zone.polygon is an Nx2 numpy array
-            polygon = zone.polygon.astype(np.int32)
+        current_zone: Optional[str] = None
 
-            # pointPolygonTest returns:
-            #   > 0 if point is inside
-            #   = 0 if on edge
-            #   < 0 if outside
+        # حدد المنطقة الحالية لهذا الشخص
+        for section_name, zone in zones.items():
+            polygon = zone.polygon.astype(np.int32)
             if cv2.pointPolygonTest(polygon, point, False) >= 0:
+                current_zone = section_name
                 s = sections_state[section_name]
                 s["current_count"] += 1
                 if s["current_count"] > s["peak"]:
                     s["peak"] = s["current_count"]
-                # add enter event if new track id
+                # سجل دخول الشخص لهذه المنطقة (لاستخدام متوسط الانتظار البسيط)
                 if tid not in [t for _, t in s["enter_events"]]:
                     s["enter_events"].append((now, tid))
+
+        # احسب الانتقال بين المناطق لهذا الشخص
+        prev_zone = track_last_zone.get(tid)
+
+        if prev_zone != current_zone:
+            if current_zone == "Entrance":
+                state["total_entries"] += 1
+            if current_zone == "Exit":
+                state["total_exits"] += 1
+
+        track_last_zone[tid] = current_zone
 
     # Trim events older than window and approximate waiting time
     for section_name, s in sections_state.items():
@@ -213,8 +243,7 @@ def build_section_summary(now: float) -> SectionSummary:
         if not events:
             avg_wait = 0.0
         else:
-            # crude estimate: if they are still in zone within window,
-            # we assume average stay half the window
+            # تقدير بسيط: نصف النافذة الزمنية
             avg_wait = SECTION_WAIT_WINDOW_SEC / 120.0  # ~2.5 min
 
         section_status_list.append(SectionStatus(
@@ -237,7 +266,7 @@ def build_section_summary(now: float) -> SectionSummary:
 def build_suggested_actions(section_summary: SectionSummary) -> SuggestedActions:
     actions: List[str] = []
 
-    # Simple rule-based suggestions
+    # قواعد بسيطة للتوصيات
     for s in section_summary.sections:
         if s.name.startswith("Desk") and s.current_count >= 5:
             actions.append(
@@ -305,9 +334,9 @@ def run_yolo_pipeline():
     tracker = sv.ByteTrack()
     line_zone = None
     line_annotator = None
-    box_annotator = sv.BoxAnnotator()  # still works, just deprecated in future versions
+    box_annotator = sv.BoxAnnotator()
     zones = None
-    zone_annotators = None  # will be dict[str, PolygonZoneAnnotator]
+    zone_annotators = None  # dict[str, PolygonZoneAnnotator]
 
     state["pipeline_running"] = True
     print("[PIPELINE] YOLO pipeline started; reading frames in loop...")
@@ -329,20 +358,23 @@ def run_yolo_pipeline():
 
             h, w, _ = frame.shape
 
+            # =============== ZONES INIT ==================
             if zones is None:
                 print(f"[PIPELINE] Initializing zones with frame size {w}x{h}")
                 zones = init_sections(w, h)
 
-                # Create a PolygonZoneAnnotator per zone
                 zone_annotators = {
                     name: sv.PolygonZoneAnnotator(
                         zone=zone,
-                        color=sv.Color.RED,  # Color.red() is deprecated in newer versions
+                        color=sv.Color.RED,
                         thickness=2,
+                        text_thickness=1,
+                        text_scale=0.5,
                     )
                     for name, zone in zones.items()
                 }
 
+            # optional counting line (للفيجوال فقط)
             if line_zone is None:
                 start = sv.Point(0, int(h * 0.5))
                 end = sv.Point(w, int(h * 0.5))
@@ -352,77 +384,103 @@ def run_yolo_pipeline():
                 )
                 print("[PIPELINE] Line zone initialized")
 
-            # run YOLO
+            # =============== YOLO & TRACKING =============
             results = model(frame, imgsz=640, verbose=False)[0]
             detections = sv.Detections.from_ultralytics(results)
 
+            # keep only "person"
             if detections.class_id is not None:
-                mask = detections.class_id == 0  # person
+                mask = detections.class_id == 0
                 detections = detections[mask]
 
             tracked = tracker.update_with_detections(detections)
 
-            line_zone.trigger(tracked)
+            # الخط فقط للعرض
+            if line_zone is not None:
+                line_zone.trigger(tracked)
 
             now = time.time()
-            in_count = int(line_zone.in_count)
-            out_count = int(line_zone.out_count)
 
-            state["total_entries"] = in_count
-            state["total_exits"] = out_count
-            state["current_inside"] = in_count - out_count
+            # =============== SECTION STATS + ENTRY/EXIT ===
+            update_section_stats(zones, tracked, now)
+
+            # عدد الأشخاص في الكادر
+            current_total = len(tracked)
+            prev_total = state.get("last_total", current_total)
+            delta_inside = abs(current_total - prev_total)
+
+            state["current_inside"] = current_total
             state["last_update_ts"] = now
+            state["last_total"] = current_total
 
             if frame_idx % 30 == 0:
                 print(
-                    f"[PIPELINE] Counts -> in={in_count}, "
-                    f"out={out_count}, inside={state['current_inside']}"
+                    f"[PIPELINE] Counts -> in={state['total_entries']}, "
+                    f"out={state['total_exits']}, inside={state['current_inside']}"
                 )
 
-            # section stats
-            update_section_stats(zones, tracked, now)
-
-            # simple alerts
+            # =============== ARABIC ALERTS (max 3) ========
             alerts: List[Dict[str, Any]] = []
+            last_alerts = state.setdefault("last_alert_ts_by_type", {})
 
+            def maybe_add_alert(alert_key: str, level: str, msg: str):
+                """
+                يضيف تنبيه فقط إذا مر وقت كافي على آخر تنبيه من نفس النوع،
+                عشان ما تتكرر التنبيهات بشكل مزعج.
+                """
+                MIN_GAP_SEC = 10  # أقل فترة بين تنبيهين من نفس النوع
+                last_ts = last_alerts.get(alert_key, 0)
+                if now - last_ts >= MIN_GAP_SEC:
+                    alerts.append(Alert(
+                        type=alert_key,
+                        level=level,
+                        message=msg,
+                        ts=now
+                    ).dict())
+                    last_alerts[alert_key] = now
+
+            # ازدحام عام داخل المبنى
             if state["current_inside"] > CROWD_THRESHOLD:
-                alerts.append(Alert(
-                    type="crowding",
-                    level="warning",
-                    message=(
-                        f"Crowding detected: {state['current_inside']} "
-                        f"people inside (limit {CROWD_THRESHOLD})"
-                    ),
-                    ts=now
-                ).dict())
+                maybe_add_alert(
+                    "ازدحام",
+                    "warning",
+                    f"تم رصد ازدحام: عدد المتواجدين حالياً "
+                    f"{state['current_inside']} (الحد المسموح {CROWD_THRESHOLD})."
+                )
 
-            if in_count > SPIKE_THRESHOLD or out_count > SPIKE_THRESHOLD:
-                direction = "entering" if in_count > out_count else "exiting"
-                alerts.append(Alert(
-                    type="movement_spike",
-                    level="info",
-                    message=(
-                        f"Unusual {direction} activity: "
-                        f"in={in_count}, out={out_count}"
-                    ),
-                    ts=now
-                ).dict())
+            # حركة غير اعتيادية (زيادة أو انخفاض كبير في العدد بين فريمين)
+            if delta_inside >= SPIKE_THRESHOLD:
+                if current_total > prev_total:
+                    maybe_add_alert(
+                        "زيادة مفاجئة في عدد الوافدين",
+                        "info",
+                        f"زيادة مفاجئة في عدد الوافدين بمقدار {delta_inside} "
+                        f"خلال فترة زمنية قصيرة."
+                    )
+                else:
+                    maybe_add_alert(
+                        "انخفاض مفاجئ في عدد المتواجدين",
+                        "info",
+                        f"انخفاض مفاجئ في عدد المتواجدين بمقدار {delta_inside} "
+                        f"خلال فترة زمنية قصيرة."
+                    )
 
             if alerts:
-                state["alerts"] = alerts[-10:]
+                # نضم التنبيهات الجديدة مع القديمة، ونحتفظ بآخر ٣ فقط
+                state["alerts"] = (state["alerts"] + alerts)[-3:]
 
-            # annotate frame
+            # =============== DRAW OVERLAYS ================
             annotated = frame.copy()
             annotated = box_annotator.annotate(
                 scene=annotated,
                 detections=tracked
             )
-            annotated = line_annotator.annotate(
-                frame=annotated,
-                line_counter=line_zone
-            )
+            if line_annotator is not None and line_zone is not None:
+                annotated = line_annotator.annotate(
+                    frame=annotated,
+                    line_counter=line_zone
+                )
 
-            # draw zones
             if zone_annotators is not None:
                 for name, annotator in zone_annotators.items():
                     annotated = annotator.annotate(
@@ -557,7 +615,7 @@ def dashboard():
 
             .title-row {
                 display: flex;
-                justify-content: space-between;
+                justify-content: space_between;
                 align-items: center;
                 margin-bottom: 10px;
             }
@@ -749,6 +807,16 @@ def dashboard():
         </style>
 
         <script>
+            // خريطة لأسماء الأقسام بالعربي لعرضها في الجدول والملخص
+            const sectionNameMap = {
+                "Desk 1": "المكتب الاول",
+                "Desk 2": "المكتب الثاني",
+                "Desk 3": "المكتب الثالث",
+                "Waiting Area": "منطقة الانتظار",
+                "Entrance": "منطقة الدخول",
+                "Exit": "منطقة الخروج"
+            };
+
             async function refresh() {
                 const [status, alerts, snap, sections, actions] = await Promise.all([
                     fetch('/building-status').then(r => r.json()),
@@ -758,9 +826,9 @@ def dashboard():
                     fetch('/suggested-actions').then(r => r.json())
                 ]);
 
-                // أرقام الزوار
-                document.getElementById('entries').innerText = status.total_entries;
-                document.getElementById('exits').innerText = status.total_exits;
+                // أرقام الزوار (تبديل الأرقام فقط بين الدخول والخروج)
+                document.getElementById('entries').innerText = status.total_exits;   // تحت "الدخول"
+                document.getElementById('exits').innerText = status.total_entries;   // تحت "الخروج"
                 document.getElementById('inside').innerText = status.current_inside;
 
                 // التنبيهات
@@ -772,7 +840,7 @@ def dashboard():
                     alerts.forEach(a => {
                         alertDiv.innerHTML += `
                             <div class="alert">
-                                <b>${a.type.toUpperCase()}</b><br/>
+                                <b>${a.type}</b><br/>
                                 ${a.message}
                             </div>
                         `;
@@ -788,13 +856,14 @@ def dashboard():
                     document.getElementById('liveImage').src = src;
                 }
 
-                // جدول الأقسام
+                // جدول الأقسام (أسماء عربية)
                 let tbody = document.getElementById('sections-body');
                 tbody.innerHTML = '';
                 sections.sections.forEach(s => {
+                    const displayName = sectionNameMap[s.name] || s.name;
                     tbody.innerHTML += `
                         <tr>
-                            <td>${s.name}</td>
+                            <td>${displayName}</td>
                             <td>${s.current_count}</td>
                             <td>${s.avg_wait_min}</td>
                             <td>${s.peak_occupancy}</td>
@@ -802,8 +871,11 @@ def dashboard():
                     `;
                 });
 
-                document.getElementById('busiest').innerText =
-                    sections.busiest_section ? sections.busiest_section : '—';
+                // أكثر قسم ازدحاماً الآن (بالعربي)
+                const busiestName = sections.busiest_section
+                    ? (sectionNameMap[sections.busiest_section] || sections.busiest_section)
+                    : '—';
+                document.getElementById('busiest').innerText = busiestName;
 
                 // التوصيات
                 let acts = document.getElementById('actions-list');
@@ -823,10 +895,10 @@ def dashboard():
         <!-- شريط علوي أخضر -->
         <div class="top-bar">
             <div class="top-bar-left">
-                بوابة الدخول الذكية
+رَﺻـــــــــــــــــﺪ
             </div>
             <div class="top-bar-right">
-                محاكاة نظام مواعيد الجهات الحكومية
+                محاكاة نظام مراقبة الجهات الحكومية
             </div>
         </div>
 
@@ -917,4 +989,4 @@ def dashboard():
         </div>
     </body>
     </html>
-    """
+    """  # end of HTML
