@@ -1,4 +1,8 @@
+import time
 from pathlib import Path
+from typing import Any, Optional
+
+import cv2
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 VIDEO_PATH = BASE_DIR / "assets" / "videos" / "PeopleWalking2.mp4"
@@ -61,3 +65,54 @@ def get_video_capture():
 #         if self.cap:
 #             self.cap.release()
 #             self.cap = None
+
+
+# Active implementation
+DEFAULT_VIDEO = VIDEO_PATH
+
+
+class VideoSource:
+    """
+    Wrapper around OpenCV VideoCapture with simple restart handling.
+    Accepts file paths or camera indices.
+    """
+
+    def __init__(self, source: Any = None) -> None:
+        self.source = str(source) if source is not None else str(DEFAULT_VIDEO)
+        self.cap: Optional[cv2.VideoCapture] = None
+
+    def open(self) -> bool:
+        """Open (or reopen) the video source."""
+        if self.cap is not None:
+            self.cap.release()
+        self.cap = cv2.VideoCapture(self.source)
+        return self.cap.isOpened()
+
+    def read(self):
+        """Read a frame; returns (ok, frame)."""
+        if self.cap is None:
+            return False, None
+        return self.cap.read()
+
+    def ensure(self) -> bool:
+        """Ensure the capture handle is open."""
+        if self.cap is None or not self.cap.isOpened():
+            return self.open()
+        return True
+
+    def restart(self, delay_sec: float = 1.0) -> bool:
+        """Restart the capture after a short delay."""
+        if self.cap:
+            self.cap.release()
+            self.cap = None
+        time.sleep(delay_sec)
+        return self.open()
+
+    def release(self) -> None:
+        """Release resources."""
+        if self.cap:
+            self.cap.release()
+            self.cap = None
+
+    def __del__(self):
+        self.release()

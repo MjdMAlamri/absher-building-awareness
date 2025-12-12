@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Smart Gate – Crowd Awareness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="header">
+    <h1>Smart Gate – Crowd Awareness</h1>
+    <p>Live building monitoring (demo)</p>
+  </header>
+
+  <main class="container">
+
+    <!-- Top stats -->
+    <section class="stats">
+      <div class="stat">
+        <span class="label">Total Entries</span>
+        <span id="entries" class="value">–</span>
+      </div>
+      <div class="stat">
+        <span class="label">Total Exits</span>
+        <span id="exits" class="value">–</span>
+      </div>
+      <div class="stat highlight">
+        <span class="label">Currently Inside</span>
+        <span id="inside" class="value">–</span>
+      </div>
+    </section>
+
+    <!-- Live snapshot -->
+    <section class="snapshot">
+      <h2>Live Camera View</h2>
+      <img id="liveImage" alt="Live snapshot" />
+    </section>
+
+    <!-- Sections table -->
+    <section class="sections">
+      <h2>Area Status</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Section</th>
+            <th>Current</th>
+            <th>Peak</th>
+          </tr>
+        </thead>
+        <tbody id="sectionsTable"></tbody>
+      </table>
+    </section>
+
+    <!-- Alerts -->
+    <section class="alerts">
+      <h2>Alerts</h2>
+      <ul id="alertsList"></ul>
+    </section>
+
+    <!-- Suggested actions -->
+    <section class="actions">
+      <h2>Suggested Actions</h2>
+      <ul id="actionsList"></ul>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    Demo system • Simulated data • Not connected to real government systems
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
