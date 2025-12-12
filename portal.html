@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>بوابة المراقبة - Absher</title>
+  <style>
+    /* Arabic font + Absher color tokens */
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+    :root {
+      --absher-primary: #00A859;
+      --absher-primary-dark: #008045;
+      --absher-primary-light: #00C968;
+      --absher-white: #FFFFFF;
+      --absher-gray-50: #F9FAFB;
+      --absher-gray-100: #F3F4F6;
+      --absher-gray-200: #E5E7EB;
+      --absher-gray-500: #6B7280;
+      --absher-gray-700: #374151;
+      --shadow: 0 12px 30px rgba(0,0,0,0.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      color: var(--absher-gray-700);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+    .shell {
+      background: var(--absher-white);
+      width: min(1200px, 100%);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border: 1px solid var(--absher-gray-200);
+    }
+    .top-bar {
+      background: linear-gradient(120deg, var(--absher-primary) 0%, var(--absher-primary-dark) 100%);
+      color: var(--absher-white);
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .brand {
+      font-size: 1.2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pill {
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .body {
+      padding: 36px;
+      background: var(--absher-gray-50);
+    }
+    .intro {
+      margin-bottom: 28px;
+      color: var(--absher-gray-700);
+    }
+    .intro h1 {
+      font-size: 2rem;
+      color: var(--absher-primary-dark);
+      margin-bottom: 10px;
+    }
+    .intro p { max-width: 720px; line-height: 1.6; }
+    .chips {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .chip {
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--absher-gray-100);
+      color: var(--absher-gray-700);
+      font-weight: 600;
+      font-size: 0.9rem;
+      border: 1px solid var(--absher-gray-200);
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--absher-white);
+      border-radius: 16px;
+      padding: 22px;
+      border: 1px solid var(--absher-gray-200);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 26px rgba(0,0,0,0.1);
+    }
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0,168,89,0.05), transparent 50%);
+      pointer-events: none;
+    }
+    .eyebrow {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--absher-primary-dark);
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .title {
+      font-weight: 800;
+      color: var(--absher-primary-dark);
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      background: var(--absher-primary-light);
+      color: var(--absher-white);
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .card p {
+      color: var(--absher-gray-500);
+      line-height: 1.6;
+      margin: 0;
+    }
+    .actions {
+      margin-top: auto;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .button {
+      background: var(--absher-primary);
+      color: var(--absher-white);
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      text-decoration: none;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 6px 12px rgba(0, 168, 89, 0.18);
+      transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .button.secondary {
+      background: var(--absher-white);
+      color: var(--absher-primary-dark);
+      border: 1px solid var(--absher-gray-200);
+      box-shadow: none;
+    }
+    .button:hover {
+      background: var(--absher-primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 18px rgba(0, 168, 89, 0.22);
+    }
+    .button.secondary:hover {
+      background: var(--absher-gray-100);
+      box-shadow: none;
+      transform: translateY(-1px);
+    }
+    .footer {
+      padding: 18px 24px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--absher-gray-500);
+      background: var(--absher-white);
+      border-top: 1px solid var(--absher-gray-200);
+    }
+    @media (max-width: 600px) {
+      body { padding: 16px; }
+      .body { padding: 22px; }
+      .top-bar { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="top-bar">
+      <div class="brand">وحدة الدخول الموحدة</div>
+      <div class="pill">
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="intro">
+        <h1>مرحبـــــــًا!</h1>
+        <p>انتقل بسلاسة بين الخدمات مع هوية أبشر الموحدة، للأفراد بوابة الدخول الذكية، وللمسؤولين مركز المراقبة والتحليلات.</p>
+        <div class="chips">
+        </div>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <div class="eyebrow">الأفراد • Smart Gate</div>
+          <div class="title">بوابة الدخول الذكية</div>
+          <p>تجربة دخول سلسة تعتمد على التحقق البصري والبيومتري، مهيأة لسرعة المرور والأمان المتقدم.</p>
+          <div class="actions">
+            <a class="button" href="smart-gate/public/index.html">دخول الأفراد</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="eyebrow">المسؤولون • Portal</div>
+          <div class="title">مركز المراقبة والتحليلات</div>
+          <p>وصول مركزي إلى لوحات مراقبة الحشود وتحليلات الاحتيال، مع اتساق كامل مع ألوان وشكل أبشر.</p>
+          <div class="actions">
+            <a class="button" href="fraud-engine/frontend/admin-dashboard/index.html">واجهة المراقبة الإدارية</a>
+            <a class="button secondary" href="crowd-awareness/frontend/index.html">مراقبة الحشود</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      تجربة تجريبية • تصميم أبشر الموحد • روابط داخلية للتطبيقات
+    </div>
+  </div>
+</body>
+</html>
+
