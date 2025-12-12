@@ -85,9 +85,8 @@ function Filters({ filters, onFilterChange, onClear }) {
           >
             <option value="">الكل</option>
             <option value="face+fingerprint">بصمة + وجه</option>
-            <option value="qr+otp">QR Code + OTP</option>
+            <option value="nafath">نفاذ</option>
             <option value="biometric_only">بيومترية فقط</option>
-            <option value="manual_review">مراجعة يدوية</option>
           </select>
         </div>
 

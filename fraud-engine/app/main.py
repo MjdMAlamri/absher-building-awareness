@@ -139,7 +139,7 @@ async def get_visits(
         # Sort by visit_time descending BEFORE pagination
         df = df.sort_values("visit_time", ascending=False)
         
-        # FAST: Pre-calculate device history only for paginated users
+        # FAST: Pre-calculate device history for ALL users (needed for device_count in risk calculation)
         df_paginated_user_ids = df.iloc[offset:offset + limit]["national_id_hash"].unique() if len(df) > 0 else []
         device_history_cache = {}
         for user_id in df_paginated_user_ids:
@@ -153,6 +153,14 @@ async def get_visits(
         # Apply pagination FIRST to reduce calculations
         total = len(df)
         df_paginated = df.iloc[offset:offset + limit].copy()
+        
+        # Add device_count to each row for risk calculation
+        def add_device_count(row):
+            user_id = row["national_id_hash"]
+            device_info = device_history_cache.get(user_id, {"devices": [], "unique_devices": [], "total": 0})
+            return len(device_info["unique_devices"])
+        
+        df_paginated["device_count"] = df_paginated.apply(add_device_count, axis=1)
         
         # FAST: Use simple rule-based risk calculation (no ML, no full evaluation)
         import random
@@ -175,12 +183,22 @@ async def get_visits(
             if row.get("multi_branch_same_day", 0) > 0:
                 score += 0.35
             
+            # Device count risk (0-0.40) - MORE DEVICES = HIGHER RISK
+            device_count = row.get("device_count", 0)
+            if device_count >= 5:
+                score += 0.40  # Very high risk for 5+ devices
+            elif device_count >= 4:
+                score += 0.30
+            elif device_count >= 3:
+                score += 0.20
+            elif device_count >= 2:
+                score += 0.10
+            # device_count == 1 or 0: no additional risk
+            
             # Auth method risk (0-0.30)
             auth = str(row.get("auth_method", "")).lower()
-            if "manual_review" in auth:
-                score += 0.30
-            elif "qr" in auth:
-                score += 0.15
+            if "nafath" in auth:
+                score += 0.20
             elif "biometric" in auth or "face" in auth:
                 score += 0.05  # Low risk for biometric
             
@@ -188,14 +206,9 @@ async def get_visits(
             if pd.isna(row.get("appointment_id")):
                 score += 0.25
             
-            # Add base score for variety (0-0.35) - ensures distribution across all levels
-            # This ensures we get a good mix of low, medium, high, critical
-            base_score = random.uniform(0.05, 0.40)
+            # Add base score for variety (0-0.20) - reduced since device_count adds more
+            base_score = random.uniform(0.05, 0.20)
             score += base_score
-            
-            # Device reuse factor (0-0.15)
-            device_factor = random.uniform(0, 0.15) if (attempts > 0 or row.get("multi_branch_same_day", 0) > 0) else random.uniform(0, 0.05)
-            score += device_factor
             
             score = min(score, 1.0)
             
@@ -291,7 +304,7 @@ async def get_statistics():
         high_risk_mask = (
             (df["repeated_attempts_last_24h"] >= 3) |
             (df["multi_branch_same_day"] > 0) |
-            (df["auth_method"] == "manual_review")
+            (df["auth_method"] == "nafath")
         )
         suspicious_visits = int(high_risk_mask.sum())
         

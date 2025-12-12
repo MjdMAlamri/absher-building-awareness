@@ -40,19 +40,18 @@ function VisitsTable({ visits, loading, onVisitsUpdate }) {
   const getAuthMethodLabel = (method) => {
     const labels = {
       'face+fingerprint': 'بصمة + وجه',
-      'qr+otp': 'QR Code',
+      'nafath': 'نفاذ',
       'biometric_only': 'بيومترية',
-      'manual_review': 'مراجعة يدوية',
     }
     return labels[method] || method
   }
 
   const getAuthBadgeClass = (method) => {
-    if (method.includes('qr')) return 'auth-badge auth-badge-qr'
+    if (method.includes('nafath')) return 'auth-badge auth-badge-nafath'
     if (method.includes('face') || method.includes('fingerprint') || method.includes('biometric')) {
       return 'auth-badge auth-badge-biometric'
     }
-    return 'auth-badge auth-badge-manual'
+    return 'auth-badge auth-badge-default'
   }
 
   if (loading) {
