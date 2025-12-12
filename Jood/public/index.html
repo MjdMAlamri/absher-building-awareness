@@ -1,0 +1,937 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>بوابة الدخول الذكية</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green: #0f6f4f;
+      --green-dark: #0b5a40;
+      --green-light: #e6f4ec;
+      --gray-50: #f7f8fb;
+      --gray-100: #eef1f5;
+      --gray-200: #d9dde3;
+      --gray-300: #cbd5e1;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+      --white: #ffffff;
+      --shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      --radius: 16px;
+      --font-ar: "IBM Plex Arabic", "Cairo", "Noto Kufi Arabic", system-ui, sans-serif;
+      --font-en: "IBM Plex Sans", "Inter", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--font-ar);
+      background: linear-gradient(180deg, #f6f9f7 0%, #f2f5f7 100%);
+      color: var(--gray-800);
+      min-height: 100vh;
+    }
+
+    .app-header {
+      background: var(--green);
+      color: var(--white);
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .app-header .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 2px solid rgba(255,255,255,0.22);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 20px;
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    .app-title-main {
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .app-title-sub {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .app-layout {
+      max-width: 1100px;
+      margin: 28px auto 40px;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--gray-200);
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+      color: var(--gray-800);
+      font-family: var(--font-ar);
+    }
+
+    .step-indicator {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: var(--gray-600);
+      flex-wrap: wrap;
+    }
+
+    .step-pill {
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: var(--green-light);
+      color: var(--green);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(15, 111, 79, 0.12);
+    }
+
+    .step-pill.inactive {
+      background: var(--gray-100);
+      color: var(--gray-600);
+      border-color: var(--gray-200);
+    }
+
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: currentColor;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray-700);
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--gray-300);
+      font-size: 15px;
+      box-sizing: border-box;
+      direction: ltr;
+      text-align: left;
+      background: var(--white);
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px rgba(15, 111, 79, 0.16);
+    }
+
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      transition: transform 0.05s ease, box-shadow 0.1s ease;
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: var(--white);
+      box-shadow: 0 6px 14px rgba(15, 111, 79, 0.24);
+    }
+
+    .btn-primary:hover {
+      background: var(--green-dark);
+    }
+
+    .btn-outline {
+      background: var(--white);
+      border: 1px solid var(--green);
+      color: var(--green);
+    }
+
+    .btn-outline:hover {
+      background: var(--green-light);
+    }
+
+    .btn-secondary {
+      background: var(--gray-100);
+      color: var(--gray-700);
+      border: 1px solid var(--gray-200);
+    }
+
+    .btn-secondary:hover {
+      background: var(--gray-200);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--gray-200);
+      background: var(--gray-50);
+      color: var(--gray-700);
+    }
+    .status-wait { background: #fff8e6; color: #9a6b00; border-color: #f2d48a; }
+    .status-progress { background: #e7f0ff; color: #0b5fa7; border-color: #bcd3ff; }
+    .status-ok { background: #e9f9ef; color: #0f6f4f; border-color: #b7e3c9; }
+
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mt-4 { margin-top: 16px; }
+    .mt-5 { margin-top: 24px; }
+
+    .alert {
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 12px;
+      border: 1px solid var(--gray-200);
+      background: var(--gray-50);
+      color: var(--gray-700);
+    }
+
+    .alert-info {
+      background: #e9f5ff;
+      color: #0b5fa7;
+      border: 1px solid #b7d7ff;
+    }
+
+    .alert-error {
+      background: #fff2f2;
+      color: #b42318;
+      border: 1px solid #ffcccc;
+    }
+
+    .alert-success {
+      background: #e9f9ef;
+      color: #0f6f4f;
+      border: 1px solid #b7e3c9;
+    }
+
+    .alert-icon {
+      font-size: 16px;
+      margin-top: 1px;
+    }
+
+    .hidden { display: none; }
+
+    .verification-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .verify-card {
+      border: 1px solid var(--gray-200);
+      border-radius: 14px;
+      padding: 14px;
+      background: var(--gray-50);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      cursor: pointer;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .verify-card:hover {
+      border-color: var(--green);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.05);
+    }
+    .verify-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--green-light);
+      color: var(--green);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .verify-body h3 {
+      margin: 0 0 4px 0;
+      font-size: 15px;
+      color: var(--gray-800);
+    }
+    .verify-body p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--gray-600);
+      line-height: 1.5;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: var(--green-light);
+      color: var(--green);
+      margin-right: 8px;
+    }
+
+    .camera-preview {
+      margin-top: 16px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--gray-200);
+      max-width: 360px;
+      background: var(--gray-50);
+    }
+
+    video, img {
+      width: 100%;
+      display: block;
+    }
+
+    .dl-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px 16px;
+      margin-top: 12px;
+    }
+    .dl-item {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .dl-label {
+      font-size: 13px;
+      color: var(--gray-600);
+      margin: 0 0 4px 0;
+      font-weight: 600;
+    }
+    .dl-value {
+      margin: 0;
+      font-size: 15px;
+      color: var(--gray-800);
+      line-height: 1.5;
+    }
+
+    .notes-box {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-top: 12px;
+    }
+    .notes-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gray-700);
+      margin: 0 0 8px 0;
+    }
+    .notes-list {
+      margin: 0;
+      padding-inline-start: 18px;
+      color: var(--gray-800);
+      line-height: 1.6;
+    }
+    .notes-list li {
+      margin-bottom: 6px;
+    }
+
+    @media (max-width: 768px) {
+      .appointment-grid { grid-template-columns: 1fr; }
+      .app-header { padding: 14px 18px; }
+      .card { padding: 18px; }
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      font-size: 11px;
+      color: var(--gray-600);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="logo">
+      <div class="logo-mark">ب</div>
+      <div>
+        <div class="app-title-main">بوابة الدخول الذكية</div>
+        <div class="app-title-sub">محاكاة نظام مواعيد الجهات الحكومية</div>
+      </div>
+    </div>
+    <div style="font-size: 12px; opacity: 0.9;">
+      نسخة تجريبية • بيانات وهمية لأغراض العرض فقط
+    </div>
+  </header>
+
+  <main class="app-layout">
+    <section class="card">
+      <div class="step-indicator">
+        <div class="step-pill" id="step-pill-1">
+          <span class="step-dot"></span>
+          ١. إدخال رقم الهوية
+        </div>
+        <div class="step-pill inactive" id="step-pill-2">
+          <span class="step-dot"></span>
+          ٢. التحقق بالبيانات الحيوية
+        </div>
+        <div class="step-pill inactive" id="step-pill-3">
+          <span class="step-dot"></span>
+          ٣. عرض تفاصيل الموعد
+        </div>
+      </div>
+
+      <!-- Step 1: Enter National ID -->
+      <div id="step-1">
+        <h2>أدخل رقم الهوية الوطنية</h2>
+        <p style="font-size: 14px; color: #4b5563;">
+          الرجاء إدخال رقم الهوية للتحقق من وجود حجز مسبق في النظام.
+        </p>
+
+        <label for="nationalId">رقم الهوية الوطنية</label>
+        <input
+          type="text"
+          id="nationalId"
+          maxlength="10"
+        />
+
+        <button class="btn btn-primary mt-3" id="btnCheckId">
+          التحقق من الموعد
+        </button>
+
+        <div class="alert alert-info mt-3">
+          <span class="alert-icon">ℹ️</span>
+          <span>هذه الواجهة تستخدم بيانات وهمية وهي لأغراض التدريب والعرض فقط، ولا ترتبط بأي أنظمة حكومية حقيقية.</span>
+        </div>
+
+        <div id="idError" class="alert alert-error mt-3 hidden">
+          <span class="alert-icon">⚠️</span>
+          <span id="idErrorMessage"></span>
+        </div>
+      </div>
+
+      <!-- Step 2: Choose verification method -->
+      <div id="step-2" class="hidden">
+        <h2>اختر طريقة التحقق من الهوية</h2>
+        <p style="font-size: 14px; color: #4b5563;">
+          يمكنك التحقق باستخدام صورة شخصية أو باستخدام البصمة.
+        </p>
+
+        <div class="verification-options">
+          <div class="verify-card" id="btnUseSelfie">
+            <div class="verify-icon">📷</div>
+            <div class="verify-body">
+              <h3>التحقق بالصورة</h3>
+              <p>التقاط صورة أو رفعها للتحقق عبر البصمة الوجهية.</p>
+            </div>
+          </div>
+          <div class="verify-card" id="btnUseFingerprint">
+            <div class="verify-icon">🖐️</div>
+            <div class="verify-body">
+              <h3>التحقق بالبصمة</h3>
+              <p>محاكاة قارئ البصمة مع تعليمات واضحة للمستخدم.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Selfie verification area -->
+        <div id="selfieSection" class="hidden mt-4">
+          <h3>
+            التحقق بالصورة
+            <span class="badge">تجريبي</span>
+          </h3>
+          <p style="font-size: 13px; color: #6b7280;">
+            سيتم تشغيل الكاميرا لالتقاط صورة سريعة، ثم يتم إرسال طلب تحقق تجريبي للخادم.
+          </p>
+
+          <div class="camera-preview">
+            <video id="videoPreview" autoplay playsinline></video>
+          </div>
+
+          <div class="mt-3">
+            <label for="selfieFile" style="font-size: 13px; color: #4b5563;">أو قم برفع صورة من جهازك</label>
+            <input type="file" id="selfieFile" accept="image/*" style="margin-top: 6px;">
+          </div>
+
+          <button class="btn btn-primary mt-3" id="btnVerifySelfie">
+            التقاط والتحقق
+          </button>
+
+          <button class="btn btn-secondary mt-3" id="btnBackFromSelfie">
+            رجوع لاختيار طريقة أخرى
+          </button>
+
+          <div id="selfieMessage" class="alert mt-3 hidden">
+            <span class="alert-icon">ℹ️</span>
+            <span id="selfieMessageText"></span>
+          </div>
+        </div>
+
+        <!-- Fingerprint verification area -->
+        <div id="fingerprintSection" class="hidden mt-4">
+          <h3>
+            التحقق بالبصمة
+            <span class="badge">محاكاة</span>
+          </h3>
+          <p style="font-size: 13px; color: #6b7280;">
+            في النظام الحقيقي، سيتم استخدام قارئ البصمة المتصل بالجهاز مع
+            برمجيات متخصصة لمقارنة البصمة مع قاعدة البيانات. في هذا النموذج
+            نقوم بمحاكاة العملية فقط.
+          </p>
+
+          <div style="margin-top:8px;">
+            <div class="status-pill status-wait" id="fpStatus">انتظار الإدخال</div>
+          </div>
+          <p style="font-size: 13px; color: #4b5563; margin-top:10px; margin-bottom:8px;">
+            يرجى وضع الإصبع على قارئ البصمة عند الجاهزية. سيتم إبلاغك بحالة التحقق.
+          </p>
+
+          <button class="btn btn-primary mt-3" id="btnSimulateFingerprint">
+            محاكاة التحقق بالبصمة
+          </button>
+
+          <button class="btn btn-secondary mt-3" id="btnBackFromFingerprint">
+            رجوع لاختيار طريقة أخرى
+          </button>
+
+          <div id="fingerprintMessage" class="alert mt-3 hidden">
+            <span class="alert-icon">ℹ️</span>
+            <span id="fingerprintMessageText"></span>
+          </div>
+        </div>
+
+        <button class="btn btn-secondary mt-4" id="btnBackToId">
+           العودة لخطوة رقم الهوية
+        </button>
+      </div>
+
+      <!-- Step 3: Appointment details -->
+      <div id="step-3" class="hidden">
+        <h2>تفاصيل الموعد</h2>
+
+        <div class="alert alert-success">
+          <span class="alert-icon">✅</span>
+          <span>تم التحقق من هوية صاحب الموعد بنجاح. يسمح له بالدخول.</span>
+        </div>
+
+        <div class="section-header" style="margin-top:12px;">
+          <div>
+            <p class="section-title" style="font-size:18px;">بيانات المستفيد</p>
+            <p class="section-sub">معلومات الهوية والخدمة</p>
+          </div>
+        </div>
+        <div class="dl-grid">
+          <div class="dl-item">
+            <p class="dl-label">الاسم الكامل</p>
+            <p class="dl-value" id="apFullName"></p>
+          </div>
+          <div class="dl-item">
+            <p class="dl-label">الخدمة</p>
+            <p class="dl-value" id="apService"></p>
+          </div>
+          <div class="dl-item">
+            <p class="dl-label">رقم التذكرة</p>
+            <p class="dl-value" id="apTicket"></p>
+          </div>
+        </div>
+
+        <div class="section-header" style="margin-top:12px;">
+          <div>
+            <p class="section-title" style="font-size:18px;">معلومات الموعد</p>
+            <p class="section-sub">التاريخ والوقت</p>
+          </div>
+        </div>
+        <div class="dl-grid">
+          <div class="dl-item">
+            <p class="dl-label">التاريخ</p>
+            <p class="dl-value" id="apDate"></p>
+          </div>
+          <div class="dl-item">
+            <p class="dl-label">الوقت</p>
+            <p class="dl-value" id="apTime"></p>
+          </div>
+        </div>
+
+        <div class="section-header" style="margin-top:12px;">
+          <div>
+            <p class="section-title" style="font-size:18px;">موقع الخدمة</p>
+            <p class="section-sub">تفاصيل الموقع للوصول</p>
+          </div>
+        </div>
+        <div class="dl-grid">
+          <div class="dl-item">
+            <p class="dl-label">الموقع</p>
+            <p class="dl-value" id="apLocation"></p>
+          </div>
+        </div>
+
+        <div class="notes-box">
+          <p class="notes-title">ملاحظات وتعليمات الدخول</p>
+          <ul class="notes-list" id="apNotesList"></ul>
+        </div>
+
+        <button class="btn btn-primary mt-4" id="btnNewVisitor">
+          إنهاء والانتقال للزائر التالي
+        </button>
+
+        <div class="footer-note">
+          هذا النظام للتجربة فقط ولا يمثل أي منصة رسمية.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const step1 = document.getElementById('step-1');
+    const step2 = document.getElementById('step-2');
+    const step3 = document.getElementById('step-3');
+
+    const pill1 = document.getElementById('step-pill-1');
+    const pill2 = document.getElementById('step-pill-2');
+    const pill3 = document.getElementById('step-pill-3');
+
+    const nationalIdInput = document.getElementById('nationalId');
+    const btnCheckId = document.getElementById('btnCheckId');
+    const idError = document.getElementById('idError');
+    const idErrorMessage = document.getElementById('idErrorMessage');
+
+    const btnUseSelfie = document.getElementById('btnUseSelfie');
+    const btnUseFingerprint = document.getElementById('btnUseFingerprint');
+    const btnBackToId = document.getElementById('btnBackToId');
+
+    const selfieSection = document.getElementById('selfieSection');
+    const fingerprintSection = document.getElementById('fingerprintSection');
+
+    const videoPreview = document.getElementById('videoPreview');
+    const selfieFile = document.getElementById('selfieFile');
+    const btnVerifySelfie = document.getElementById('btnVerifySelfie');
+    const btnBackFromSelfie = document.getElementById('btnBackFromSelfie');
+    const selfieMessage = document.getElementById('selfieMessage');
+    const selfieMessageText = document.getElementById('selfieMessageText');
+
+    const btnSimulateFingerprint = document.getElementById('btnSimulateFingerprint');
+    const btnBackFromFingerprint = document.getElementById('btnBackFromFingerprint');
+    const fingerprintMessage = document.getElementById('fingerprintMessage');
+    const fingerprintMessageText = document.getElementById('fingerprintMessageText');
+    const fpStatus = document.getElementById('fpStatus');
+
+    const apFullName = document.getElementById('apFullName');
+    const apService = document.getElementById('apService');
+    const apLocation = document.getElementById('apLocation');
+    const apDate = document.getElementById('apDate');
+    const apTime = document.getElementById('apTime');
+    const apTicket = document.getElementById('apTicket');
+    const apNotesList = document.getElementById('apNotesList');
+
+    const btnNewVisitor = document.getElementById('btnNewVisitor');
+
+    let currentNationalId = null;
+    let currentStream = null;
+
+    function setStep(stepNumber) {
+      step1.classList.add('hidden');
+      step2.classList.add('hidden');
+      step3.classList.add('hidden');
+
+      pill1.classList.add('inactive');
+      pill2.classList.add('inactive');
+      pill3.classList.add('inactive');
+
+      if (stepNumber === 1) {
+        step1.classList.remove('hidden');
+        pill1.classList.remove('inactive');
+      } else if (stepNumber === 2) {
+        step2.classList.remove('hidden');
+        pill2.classList.remove('inactive');
+      } else if (stepNumber === 3) {
+        step3.classList.remove('hidden');
+        pill3.classList.remove('inactive');
+      }
+    }
+
+    // Stop camera stream if running
+    function stopCamera() {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+      }
+    }
+
+    // Step 1: Check ID
+    btnCheckId.addEventListener('click', async () => {
+      const id = nationalIdInput.value.trim();
+
+      idError.classList.add('hidden');
+
+      if (!id || id.length < 10) {
+        idErrorMessage.textContent = 'الرجاء إدخال رقم هوية صحيح مكون من 10 أرقام.';
+        idError.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/check-id', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nationalId: id })
+        });
+
+        const data = await res.json();
+
+        if (!data.ok) {
+          idErrorMessage.textContent = data.message || 'لا يوجد موعد مسجل لهذا الرقم.';
+          idError.classList.remove('hidden');
+          return;
+        }
+
+        currentNationalId = id;
+        setStep(2);
+      } catch (err) {
+        idErrorMessage.textContent = 'حدث خطأ في الاتصال بالخادم. الرجاء المحاولة مرة أخرى.';
+        idError.classList.remove('hidden');
+      }
+    });
+
+    // Step 2: choose verification method
+    btnUseSelfie.addEventListener('click', async () => {
+      fingerprintSection.classList.add('hidden');
+      selfieSection.classList.remove('hidden');
+      selfieMessage.classList.add('hidden');
+
+      // Start camera
+      try {
+        stopCamera();
+        currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        videoPreview.srcObject = currentStream;
+      } catch (err) {
+        selfieMessage.classList.remove('hidden');
+        selfieMessage.classList.add('alert-error');
+        selfieMessageText.textContent = 'تعذر تشغيل الكاميرا. الرجاء التحقق من الأذونات.';
+      }
+    });
+
+    btnBackFromSelfie.addEventListener('click', () => {
+      selfieSection.classList.add('hidden');
+      stopCamera();
+    });
+
+    btnUseFingerprint.addEventListener('click', () => {
+      selfieSection.classList.add('hidden');
+      stopCamera();
+      fingerprintSection.classList.remove('hidden');
+      fingerprintMessage.classList.add('hidden');
+      fpStatus.textContent = 'انتظار الإدخال';
+      fpStatus.className = 'status-pill status-wait';
+    });
+
+    btnBackFromFingerprint.addEventListener('click', () => {
+      fingerprintSection.classList.add('hidden');
+    });
+
+    btnBackToId.addEventListener('click', () => {
+      selfieSection.classList.add('hidden');
+      fingerprintSection.classList.add('hidden');
+      stopCamera();
+      setStep(1);
+    });
+
+    // Selfie verification (real: capture/upload and send as FormData)
+    btnVerifySelfie.addEventListener('click', async () => {
+      if (!currentNationalId) return;
+
+      selfieMessage.className = 'alert mt-3';
+      selfieMessage.classList.add('alert-info');
+      selfieMessage.classList.remove('hidden');
+      selfieMessageText.textContent = 'جاري التقاط/رفع الصورة وإرسال طلب التحقق...';
+
+      const getImageBlob = () => {
+        return new Promise((resolve, reject) => {
+          if (currentStream) {
+            const canvas = document.createElement('canvas');
+            canvas.width = videoPreview.videoWidth;
+            canvas.height = videoPreview.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoPreview, 0, 0);
+            canvas.toBlob((blob) => {
+              if (blob) resolve(blob);
+              else reject(new Error('فشل في التقاط الصورة من الكاميرا.'));
+            }, 'image/jpeg', 0.95);
+          } else if (selfieFile.files && selfieFile.files[0]) {
+            resolve(selfieFile.files[0]);
+          } else {
+            reject(new Error('الرجاء التقاط صورة بالكاميرا أو رفع صورة من الجهاز.'));
+          }
+        });
+      };
+
+      try {
+        const imageBlob = await getImageBlob();
+        const formData = new FormData();
+        formData.append('image', imageBlob, 'selfie.jpg');
+        formData.append('nationalId', currentNationalId);
+
+        const res = await fetch('/api/verify-selfie', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (!data.ok) {
+          selfieMessage.className = 'alert mt-3 alert-error';
+          selfieMessageText.textContent = data.message || 'فشل التحقق بالصورة.';
+          return;
+        }
+
+        // Success -> show appointment
+        fillAppointment(data.appointment);
+        stopCamera();
+        setStep(3);
+      } catch (err) {
+        selfieMessage.className = 'alert mt-3 alert-error';
+        selfieMessageText.textContent = err.message || 'حدث خطأ في الاتصال بالخادم.';
+      }
+    });
+
+    // Auto-trigger verification when a file is selected (no button click needed)
+    selfieFile.addEventListener('change', () => {
+      if (!currentNationalId) {
+        selfieMessage.className = 'alert mt-3 alert-error';
+        selfieMessage.classList.remove('hidden');
+        selfieMessageText.textContent = 'الرجاء إدخال رقم الهوية والتحقق أولاً.';
+        return;
+      }
+      // Stop camera if running; we'll use the uploaded file
+      stopCamera();
+      // Trigger the same flow as the button
+      btnVerifySelfie.click();
+    });
+
+    // Fingerprint verification (simulated)
+    btnSimulateFingerprint.addEventListener('click', async () => {
+      if (!currentNationalId) return;
+
+      fpStatus.textContent = 'جارٍ التحقق';
+      fpStatus.className = 'status-pill status-progress';
+      fingerprintMessage.className = 'alert mt-3 alert-info';
+      fingerprintMessage.classList.remove('hidden');
+      fingerprintMessageText.textContent = 'جاري محاكاة التحقق بالبصمة...';
+
+      try {
+        const res = await fetch('/api/verify-fingerprint', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nationalId: currentNationalId })
+        });
+
+        const data = await res.json();
+
+        if (!data.ok) {
+          fpStatus.textContent = 'لم يتم التحقق';
+          fpStatus.className = 'status-pill status-wait';
+          fingerprintMessage.className = 'alert mt-3 alert-error';
+          fingerprintMessageText.textContent = data.message || 'فشل التحقق بالبصمة.';
+          return;
+        }
+
+        fpStatus.textContent = 'تم التحقق';
+        fpStatus.className = 'status-pill status-ok';
+        fillAppointment(data.appointment);
+        setStep(3);
+      } catch (err) {
+        fpStatus.textContent = 'لم يتم التحقق';
+        fpStatus.className = 'status-pill status-wait';
+        fingerprintMessage.className = 'alert mt-3 alert-error';
+        fingerprintMessageText.textContent = 'حدث خطأ في الاتصال بالخادم.';
+      }
+    });
+
+    function fillAppointment(ap) {
+      apFullName.textContent = ap.fullName;
+      apService.textContent = ap.service;
+      apLocation.textContent = ap.location;
+      apDate.textContent = ap.date;
+      apTime.textContent = ap.time;
+      apTicket.textContent = ap.ticketNumber;
+
+      // Render notes as bullet/numbered list
+      apNotesList.innerHTML = '';
+      const lines = (ap.notes || '').split(/[\n\.]+/).map(s => s.trim()).filter(Boolean);
+      if (lines.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = ap.notes || 'لا توجد ملاحظات إضافية.';
+        apNotesList.appendChild(li);
+      } else {
+        lines.forEach((line) => {
+          const li = document.createElement('li');
+          li.textContent = line;
+          apNotesList.appendChild(li);
+        });
+      }
+    }
+
+    // New visitor (reset)
+    btnNewVisitor.addEventListener('click', () => {
+      currentNationalId = null;
+      nationalIdInput.value = '';
+      selfieSection.classList.add('hidden');
+      fingerprintSection.classList.add('hidden');
+      fingerprintMessage.classList.add('hidden');
+      selfieMessage.classList.add('hidden');
+      stopCamera();
+      setStep(1);
+    });
+
+    // Start at step 1
+    setStep(1);
+  </script>
+</body>
+</html>
