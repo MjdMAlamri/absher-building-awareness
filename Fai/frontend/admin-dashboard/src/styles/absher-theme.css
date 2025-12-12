@@ -1,0 +1,49 @@
+/* Arabic Font Support - MUST be first */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+/* Absher Color Theme */
+:root {
+  /* Absher Green Colors */
+  --absher-primary: #00A859;
+  --absher-primary-dark: #008045;
+  --absher-primary-light: #00C968;
+  
+  /* Neutral Colors */
+  --absher-white: #FFFFFF;
+  --absher-gray-50: #F9FAFB;
+  --absher-gray-100: #F3F4F6;
+  --absher-gray-200: #E5E7EB;
+  --absher-gray-300: #D1D5DB;
+  --absher-gray-400: #9CA3AF;
+  --absher-gray-500: #6B7280;
+  --absher-gray-600: #4B5563;
+  --absher-gray-700: #374151;
+  --absher-gray-800: #1F2937;
+  --absher-gray-900: #111827;
+  
+  /* Status Colors */
+  --absher-success: #10B981;
+  --absher-warning: #F59E0B;
+  --absher-danger: #EF4444;
+  --absher-info: #3B82F6;
+  
+  /* Risk Level Colors */
+  --risk-low: #10B981;
+  --risk-medium: #F59E0B;
+  --risk-high: #F97316;
+  --risk-critical: #EF4444;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Cairo', 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
+  background-color: var(--absher-gray-50);
+  color: var(--absher-gray-900);
+  direction: rtl;
+}
+
