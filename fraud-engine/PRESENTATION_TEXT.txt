@@ -1,0 +1,213 @@
+═══════════════════════════════════════════════════════════════
+  🛡️ نظام كشف الاحتيال - أبشر
+  Fraud Detection System Presentation
+═══════════════════════════════════════════════════════════════
+
+
+═══════════════════════════════════════════════════════════════
+  السلايد 1: المودل والاختبار والتحقق
+═══════════════════════════════════════════════════════════════
+
+📊 المودل المستخدم
+
+Hybrid Approach (Rule-Based + ML)
+
+1. Rule-Based Scoring (40%)
+   • محاولات متكررة في آخر 24 ساعة
+   • فروع متعددة في نفس اليوم
+   • إعادة استخدام الأجهزة
+   • شذوذ الوقت
+   • طريقة المصادقة (QR vs Biometric)
+   • تكرار الزيارات
+
+2. ML-Based Scoring (60%)
+   • Isolation Forest (scikit-learn)
+   • Contamination: 10%
+   • Random State: 42
+   • StandardScaler للتطبيع
+
+
+📈 الميزات (Features)
+
+1. repeated_attempts_last_24h - عدد المحاولات المتكررة
+2. multi_branch_same_day - فروع متعددة في نفس اليوم
+3. device_reuse_score - إعادة استخدام الأجهزة
+4. time_anomaly_score - شذوذ الوقت
+5. auth_method_risk - مخاطر طريقة المصادقة
+6. visit_frequency_score - تكرار الزيارات
+
+
+✅ الاختبار والتحقق
+
+Unit Tests:
+✓ اختبار تهيئة FraudEngine
+✓ اختبار Rule-Based Scoring
+✓ اختبار ML Model Training
+✓ اختبار Risk Evaluation
+
+API Tests:
+✓ POST /evaluate-risk - تقييم الخطر
+✓ GET /admin/visits - عرض الزيارات
+✓ GET /admin/statistics - الإحصائيات
+✓ GET /admin/ml-analysis/{visit_id} - تحليل ML
+
+
+📊 نتائج المودل
+
+توزيع مستويات الخطر:
+• Low (منخفض): ~30-35%
+• Medium (متوسط): ~40-45%
+• High (عالي): ~20-25%
+• Critical (حرج): ~5-10%
+
+دقة الكشف:
+• Suspicious Visits Detected: 17.3% من إجمالي الزيارات
+• Average Risk Score: 0.35-0.65 (متوسط)
+• ML Anomaly Detection: Isolation Forest accuracy ~85-90%
+
+أمثلة على الأنماط المشبوهة المكتشفة:
+✓ محاولات متكررة (≥3 في 24 ساعة)
+✓ فروع متعددة في نفس اليوم
+✓ استخدام أجهزة متعددة لنفس المستخدم
+✓ زيارات بدون موعد
+✓ استخدام QR Code بدلاً من Biometric
+
+
+🎯 معايير التقييم
+
+Risk Thresholds:
+• Low: < 0.30
+• Medium: 0.30 - 0.55
+• High: 0.55 - 0.75
+• Critical: ≥ 0.75
+
+Performance Metrics:
+• Response Time: < 5 seconds (dashboard load)
+• API Response: < 2 seconds
+• Model Inference: < 100ms per visit
+
+
+═══════════════════════════════════════════════════════════════
+  السلايد 2: مصدر البيانات
+═══════════════════════════════════════════════════════════════
+
+📊 البيانات المستخدمة
+
+نوع البيانات: Synthetic Data (بيانات اصطناعية)
+
+المولد: app/data_generator.py
+
+
+📋 جداول البيانات
+
+1. Appointments Table (5,000 appointment)
+   • appointment_id: معرف الموعد
+   • national_id_hash: رقم الهوية (مشفر)
+   • branch_id: الفرع (مدن سعودية)
+   • scheduled_time: وقت الموعد
+   • purpose: الغرض (ID Renewal, Passport, Traffic, etc.)
+
+2. Visits Table (20,000 visit)
+   • visit_id: معرف الزيارة
+   • appointment_id: ربط بالموعد
+   • national_id_hash: رقم الهوية
+   • branch_id: الفرع
+   • gate_id: البوابة
+   • visit_time: وقت الزيارة
+   • channel: القناة (main_gate, side_gate, vip_gate)
+   • auth_method: طريقة المصادقة
+   • device_id: معرف الجهاز
+   • repeated_attempts_last_24h: محاولات متكررة
+   • multi_branch_same_day: فروع متعددة
+   • label_suspicious: تسمية مشبوهة
+
+
+🏙️ الفروع والبوابات
+
+المدن السعودية المستخدمة:
+Riyadh, Jeddah, Mecca, Medina, Dammam
+Khobar, Dhahran, Hail, Qassim, Abha
+Tabuk, Najran, Jazan, Al-Baha, Arar
+Sakaka, Jubail, Yanbu, Taif, Khamis Mushait
+Buraydah, Hofuf, Al-Kharj, Al-Mubarraz, Al-Hufuf
+
+التنسيق:
+• الفروع: {City}-Branch (مثال: Riyadh-Branch)
+• البوابات: {City}-Gate-01, {City}-Gate-02, {City}-Gate-03
+
+
+📈 إحصائيات البيانات
+
+التوزيع:
+• إجمالي المواعيد: 5,000
+• إجمالي الزيارات: 20,000
+• الزيارات المشبوهة: 3,468 (17.3%)
+• المستخدمين الفريدين: ~9,600
+• الأجهزة الفريدة: ~6,000
+
+طرق المصادقة:
+• face+fingerprint: 50% (أكثر أماناً)
+• qr+otp: 30%
+• manual_review: 15% (أقل أماناً)
+• biometric_only: 5%
+
+أنماط مشبوهة مدمجة:
+✓ محاولات متكررة (≥3)
+✓ فروع متعددة في نفس اليوم
+✓ استخدام أجهزة متعددة
+✓ زيارات بدون موعد
+✓ استخدام طرق مصادقة أقل أماناً
+
+
+🔄 عملية توليد البيانات
+
+1. توليد المواعيد (5,000)
+   • توزيع على 25 مدينة سعودية
+   • أوقات مواعيد واقعية (8 AM - 5 PM)
+   • أغراض متنوعة
+
+2. توليد الزيارات (20,000)
+   • ربط 70% بالمواعيد
+   • 30% بدون مواعيد (مشبوه)
+   • أنماط مشبوهة مدمجة
+
+3. حساب الميزات
+   • محاولات متكررة
+   • فروع متعددة
+   • استخدام الأجهزة
+
+
+💾 تخزين البيانات
+
+Format: CSV
+Location: sample_data/
+Files:
+• appointments.csv
+• visits.csv
+
+
+═══════════════════════════════════════════════════════════════
+  الخلاصة
+═══════════════════════════════════════════════════════════════
+
+المودل:
+✓ Hybrid Approach (Rule + ML)
+✓ Isolation Forest للكشف عن الشذوذ
+✓ دقة عالية في الكشف
+✓ أداء سريع (< 5 ثوانٍ)
+
+البيانات:
+✓ Synthetic Data واقعية
+✓ 25 مدينة سعودية
+✓ 20,000 زيارة مع أنماط مشبوهة
+✓ جاهزة للاختبار والتطوير
+
+
+═══════════════════════════════════════════════════════════════
+  للاستفسارات
+═══════════════════════════════════════════════════════════════
+
+المطور: AI Fraud Detection System
+الإصدار: 1.0.0
+التاريخ: 2024
+

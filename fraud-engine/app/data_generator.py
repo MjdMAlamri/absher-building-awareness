@@ -112,8 +112,8 @@ def generate_visits(n_visits: int = 20000, appointments_df: pd.DataFrame = None)
     
     # Channels and auth methods
     channels = ["main_gate", "side_gate", "vip_gate"]
-    auth_methods = ["face+fingerprint", "qr+otp", "manual_review", "biometric_only"]
-    auth_risk_weights = [0.5, 0.3, 0.15, 0.05]  # manual_review is riskier
+    auth_methods = ["face+fingerprint", "nafath", "biometric_only"]
+    auth_risk_weights = [0.5, 0.3, 0.2]  # nafath has medium risk
     
     # Generate branches and gates with city names
     branches = appointments_df["branch_id"].unique()
@@ -195,7 +195,7 @@ def generate_visits(n_visits: int = 20000, appointments_df: pd.DataFrame = None)
         is_suspicious = (
             attempts_24h >= 3 or
             (unique_branches > 0 and len(same_day_visits) > 0) or
-            row["auth_method"] == "manual_review" or
+            row["auth_method"] == "nafath" or
             attempts_24h >= 2 and row["device_id"] in df_sorted[
                 df_sorted["visit_time"] >= time_window
             ]["device_id"].value_counts().head(10).index.tolist()

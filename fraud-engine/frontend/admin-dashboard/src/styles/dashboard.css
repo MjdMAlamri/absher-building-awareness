@@ -199,9 +199,9 @@
   font-weight: 600;
 }
 
-.auth-badge-qr {
-  background-color: #DBEAFE;
-  color: #1E40AF;
+.auth-badge-nafath {
+  background-color: #FEF3C7;
+  color: #92400E;
 }
 
 .auth-badge-biometric {
@@ -209,9 +209,9 @@
   color: #065F46;
 }
 
-.auth-badge-manual {
-  background-color: #FEE2E2;
-  color: #991B1B;
+.auth-badge-default {
+  background-color: #E5E7EB;
+  color: #374151;
 }
 
 /* Device Status */

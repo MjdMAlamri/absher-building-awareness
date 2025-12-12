@@ -86,8 +86,7 @@ class FraudEngine:
         auth_risk_map = {
             "face+fingerprint": 0.0,
             "biometric_only": 0.1,
-            "qr+otp": 0.2,
-            "manual_review": 0.8,
+            "nafath": 0.3,
         }
         features["auth_method_risk"] = auth_risk_map.get(auth_method, 0.5)
         
